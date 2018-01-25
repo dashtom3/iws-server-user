@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.HikVisionDao">
+
+    <sql id="field">ip,port,username,password,iProtocol,iStreamType,iChannelID,bZeroChannel,locationId,name,describes</sql>
+
+    <resultMap id="HikVisionEntity" type="com.xj.iws.http.mvc.entity.HikVisionEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="ip" property="ip" jdbcType="VARCHAR"/>
+        <result column="port" property="port" jdbcType="VARCHAR"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="iProtocol" property="protocol" jdbcType="VARCHAR"/>
+        <result column="iStreamType" property="streamType" jdbcType="VARCHAR"/>
+        <result column="iChannelID" property="channelID" jdbcType="VARCHAR"/>
+        <result column="bZeroChannel" property="zeroChannel" jdbcType="VARCHAR"/>
+        <result column="locationId" property="locationId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="areaName" property="areaName" jdbcType="VARCHAR"/>
+        <result column="cityName" property="cityName" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="provinceName" jdbcType="VARCHAR"/>
+        <result column="locationName" property="locationName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="add" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO hikvision (<include refid="field"/>) VALUES (
+        '${ip}','${port}','${username}','${password}','${protocol}','${streamType}','${channelID}','${zeroChannel}',
+        '${locationId}','${name}','${describes}')
+    </insert>
+
+    <insert id="addHikToUser">
+        INSERT INTO hiklink (userid,hikid) VALUES (#{0},#{1})
+    </insert>
+
+    <delete id="deleteHikFormUser">
+        DELETE FROM hiklink WHERE userid = #{0} AND hikid = #{1}
+    </delete>
+
+    <delete id="delete">
+        DELETE FROM hikvision WHERE id = ${_parameter}
+    </delete>
+
+    <update id="update" useGeneratedKeys="true" keyProperty="id">
+        UPDATE hikvision
+        <set>
+            <if test="ip != null">ip = '${ip}',</if>
+            <if test="port != null">port = '${port}',</if>
+            <if test="username != null">username = '${username}',</if>
+            <if test="password != null">password = '${password}',</if>
+            <if test="protocol != null">iProtocol = '${protocol}',</if>
+            <if test="streamType != null">iStreamType = '${streamType}',</if>
+            <if test="channelID != null">iChannelID = '${channelID}',</if>
+            <if test="zeroChannel != null">bZeroChannel = '${zeroChannel}',</if>
+            <if test="name != null">name = '${name}',</if>
+            <if test="locationId != null">locationId = '${locationId}',</if>
+            <if test="describes != null">describes = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="detail" resultMap="HikVisionEntity">
+        SELECT h.id,h.ip,h.port,h.username,h.password,h.iProtocol,h.iStreamType,h.iChannelID,h.bZeroChannel,h.locationid,h.name,h.describes
+        FROM hikvision h
+        WHERE id = ${_parameter}
+    </select>
+
+    <select id="list" resultMap="HikVisionEntity">
+        SELECT
+        h.id,h.ip,h.port,h.username,h.password,h.iProtocol,h.iStreamType,h.iChannelID,h.bZeroChannel,h.locationid,h.name,h.describes
+        ,a.name AS areaName,c.name AS cityName,p.name AS provinceName,l.name AS locationName
+        FROM hikvision h
+        LEFT JOIN hiklink hl ON h.id = hl.hikid
+        LEFT JOIN location l ON h.locationid = l.id
+        LEFT JOIN area a ON a.areaid = l.areaid
+        LEFT JOIN city c ON c.cityid = a.cityid
+        LEFT JOIN province p ON p.provinceid = c.provinceid
+        WHERE hl.userid = ${userId}
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+        ORDER BY h.id
+    </select>
+
+    <select id="query" resultMap="HikVisionEntity">
+        SELECT
+        h.id,h.ip,h.port,h.username,h.password,h.iProtocol,h.iStreamType,h.iChannelID,h.bZeroChannel,h.locationid,h.name,h.describes
+        ,a.name AS areaName,c.name AS cityName,p.name AS provinceName,l.name AS locationName
+        FROM hikvision h
+        LEFT JOIN hiklink hl ON h.id = hl.hikid
+        LEFT JOIN location l ON h.locationid = l.id
+        LEFT JOIN area a ON a.areaid = l.areaid
+        LEFT JOIN city c ON c.cityid = a.cityid
+        LEFT JOIN province p ON p.provinceid = c.provinceid
+        <where>
+        <if test="condition.locationId != null">AND h.locationid = '${condition.locationId}'</if>
+        <if test="condition.ip != null">AND h.ip = '${condition.ip}'</if>
+        <if test="condition.name != null">AND h.name LIKE '%${condition.name}%'</if>
+        </where>
+        ORDER BY id
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0) FROM hikvision h
+        <where>
+            <if test="condition.locationId != null">AND h.locationid = '${condition.locationId}'</if>
+            <if test="condition.ip != null">AND h.ip = '${condition.ip}'</if>
+            <if test="condition.name != null">AND h.name LIKE '%${condition.name}%'</if>
+        </where>
+    </select>
+
+    <select id="getListCount" resultType="int">
+        SELECT COUNT(0) FROM hikvision h
+        LEFT JOIN hiklink hl ON h.id = hl.hikid
+        WHERE hl.userid = ${_parameter}
+    </select>
+
+</mapper>

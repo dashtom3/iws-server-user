@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.AreaDao">
+
+    <sql id="provinceField">id,provinceid,name</sql>
+    <sql id="cityField">id,cityid,name,provinceid</sql>
+    <sql id="areaField">id,areaid,name,cityid</sql>
+
+    <resultMap id="ProvinceEntity" type="com.xj.iws.http.mvc.entity.area.ProvinceEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="provinceid" property="provinceId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="CityEntity" type="com.xj.iws.http.mvc.entity.area.CityEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="cityid" property="cityId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="provinceid" property="provinceId" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap id="AreaEntity" type="com.xj.iws.http.mvc.entity.area.AreaEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="areaid" property="areaId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="cityid" property="cityId" jdbcType="INTEGER"/>
+        <result column="cityname" property="cityName" jdbcType="VARCHAR"/>
+        <result column="provincename" property="provinceName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="provinces" resultMap="ProvinceEntity">
+        SELECT
+        <include refid="provinceField"/>
+        FROM province
+    </select>
+
+    <select id="cities" resultMap="CityEntity" parameterType="int">
+        SELECT
+        <include refid="cityField"/>
+        FROM city WHERE provinceid = ${_parameter}
+    </select>
+
+    <select id="areas" resultMap="AreaEntity" parameterType="int">
+        SELECT
+        a.id,a.areaid,a.name,a.cityid,
+        c.name AS cityname,
+        p.name AS provinceName
+        FROM area a
+        LEFT JOIN city c ON a.cityid = c.cityid
+        LEFT JOIN province p ON c.provinceid = p.provinceid
+        WHERE a.cityid = ${_parameter}
+    </select>
+
+    <select id="province" resultMap="ProvinceEntity" parameterType="int">
+        SELECT
+        <include refid="provinceField"/>
+        FROM province WHERE provinceid = ${_parameter}
+    </select>
+
+    <select id="city" resultMap="CityEntity" parameterType="int">
+        SELECT
+        <include refid="cityField"/>
+        FROM city WHERE cityid = ${_parameter}
+    </select>
+
+    <select id="area" resultMap="AreaEntity" parameterType="int">
+        SELECT
+        a.id,a.areaid,a.name,a.cityid,
+        c.name AS cityname,
+        p.name AS provinceName
+        FROM area a
+        LEFT JOIN city c ON a.cityid = c.cityid
+        LEFT JOIN province p ON c.provinceid = p.provinceid
+        WHERE a.areaid = ${_parameter}
+    </select>
+
+    <select id="getName" resultType="String" parameterType="String">
+        SELECT name FROM
+        <if test="provinceId != 0">province WHERE provinceid = '${provinceId}'</if>
+        <if test="cityId != 0">city WHERE cityid = '${cityId}'</if>
+        <if test="areaId != 0">area WHERE areaid = '${areaId}'</if>
+    </select>
+
+</mapper>

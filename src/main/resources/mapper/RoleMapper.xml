@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.RoleDao">
+
+    <sql id="roleField">name,describes</sql>
+    <sql id="roleSubField">roleId,systemId,areaId,limitation</sql>
+
+    <resultMap id="RoleEntity" type="com.xj.iws.http.mvc.entity.RoleEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="RoleSubEntity" type="com.xj.iws.http.mvc.entity.RoleSubEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="roleid" property="roleId" jdbcType="INTEGER"/>
+        <result column="systemid" property="systemId" jdbcType="INTEGER"/>
+        <result column="areaid" property="areaId" jdbcType="INTEGER"/>
+        <result column="limitation" property="limitation" jdbcType="INTEGER"/>
+        <result column="systemname" property="systemName" jdbcType="VARCHAR"/>
+        <result column="areaname" property="areaName" jdbcType="VARCHAR"/>
+        <result column="limitname" property="limitName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="addRole" parameterType="RoleEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO role (<include refid="roleField"/>) VALUES ('${name}','${describes}')
+    </insert>
+
+    <insert id="addSub">
+        INSERT INTO rolesub (<include refid="roleSubField"/>) VALUES
+        <foreach collection="subitem" item="subitem" separator=",">
+            (${roleId},${subitem.systemId},${subitem.areaId},${subitem.limitation})
+        </foreach>
+    </insert>
+
+    <delete id="delete" parameterType="int">
+        DELETE FROM role WHERE id = ${_parameter}
+    </delete>
+
+    <delete id="deleteSub" parameterType="int">
+        DELETE FROM rolesub
+        <where>
+            <if test="roleId != 0">AND roleid = ${roleId}</if>
+            <if test="id != 0">AND id = ${id}</if>
+        </where>
+    </delete>
+
+    <update id="update" parameterType="RoleEntity" useGeneratedKeys="true" keyProperty="id">
+        UPDATE role
+        <set>
+            <if test="name != null">name = '${name}',</if>
+            <if test="describes != null">describe = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="list" parameterType="int" resultMap="RoleEntity">
+        SELECT id,
+        <include refid="roleField"/>
+        FROM role
+        WHERE id != ${except}
+        ORDER BY id
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0)
+        FROM role
+        WHERE id != ${_parameter}
+    </select>
+
+    <select id="detail" resultMap="RoleEntity">
+        SELECT id,
+        <include refid="roleField"/>
+        FROM role WHERE id = ${_parameter}
+    </select>
+
+    <select id="getSub" resultMap="RoleSubEntity">
+        SELECT r.id,r.roleId,r.systemId,r.areaId,r.limitation,t.name AS limitname,
+        s.name AS systemname,CONCAT(IFNULL(p01.name,''),IFNULL(p02.name,''),IFNULL(p03.name,''),IFNULL(c01.name,''),IFNULL(c02.name,''),IFNULL(a01.name,'')) AS areaname
+        FROM rolesub r
+        LEFT JOIN system s ON r.systemid = s.id
+        LEFT JOIN rolelimit t ON r.limitation = t.id
+        LEFT JOIN area a01 ON r.areaId = a01.areaId
+        LEFT JOIN city c01 ON a01.cityId = c01.cityId
+        LEFT JOIN province p01 ON c01.provinceId = p01.provinceId
+        LEFT JOIN city c02 ON r.areaid = c02.cityid
+        LEFT JOIN province p02 ON c02.provinceid = p02.provinceid
+        LEFT JOIN province p03 ON r.areaid = p03.provinceid
+        <where>
+            <if test="_parameter != 0">
+                AND roleid = ${_parameter}
+            </if>
+        </where>
+        ORDER BY r.roleid,r.id
+    </select>
+
+
+    <select id="query" resultType="RoleEntity" parameterType="HashMap">
+        SELECT r.id,r.roleId,r.systemId,r.areaId,r.limitation,t.name AS limitname,
+        s.name AS systemname,CONCAT(IFNULL(p01.name,''),IFNULL(p02.name,''),IFNULL(p03.name,''),IFNULL(c01.name,''),IFNULL(c02.name,''),IFNULL(a01.name,'')) AS areaname
+        FROM rolesub r
+        LEFT JOIN system s ON r.systemid = s.id
+        LEFT JOIN rolelimit t ON r.limitation = t.name
+        LEFT JOIN area a01 ON r.areaId = a01.areaId
+        LEFT JOIN city c01 ON a01.cityId = c01.cityId
+        LEFT JOIN province p01 ON c01.provinceId = p01.provinceId
+        LEFT JOIN city c02 ON r.areaid = c02.cityid
+        LEFT JOIN province p02 ON c02.provinceid = p02.provinceid
+        LEFT JOIN province p03 ON r.areaid = p03.provinceid
+        <where>
+            <if test="systemId != null">AND s.systemid = '${systemId}'</if>
+            <if test="areaId != null">AND s.areaid = '${areaId}'</if>
+            <if test="cityId != null">AND s.areaid IN (SELECT a.areaid FROM area a WHERE a.cityid = '${cityId}')</if>
+            <if test="provinceId != null">AND s.areaid IN (SELECT a.areaid FROM area a WHERE a.cityid IN
+                (SELECT c.cityid FROM city c WHERE c.provinceid = '${provinceId}'))
+            </if>
+            <if test="limitation != null">AND s.limitation = ${limitation}</if>
+            <if test="name != null">AND s.name LIKE '%${name}%'</if>
+        </where>
+        GROUP BY r.id
+        ORDER BY r.id
+    </select>
+
+    <select id="getLimit" resultType="RoleSubEntity">
+        SELECT systemid,areaid,limitation FROM rolesub WHERE roleid = ${_parameter} ORDER BY id
+    </select>
+
+    <select id="checkSystem" resultType="int">
+        SELECT count(0)
+        FROM rolesub
+        WHERE roleid = ${roleId} AND systemid = ${systemId}
+    </select>
+
+    <select id="checkWritable" resultType="int">
+        SELECT areaid
+        FROM rolesub
+        WHERE roleid = ${roleId} AND systemid = ${systemId} AND limitation &gt; ${writable}-1
+    </select>
+</mapper>

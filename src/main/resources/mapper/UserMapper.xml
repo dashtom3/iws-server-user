@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.UserDao">
+
+    <sql id="field">username,password,roleid,status,date,name,address,time,describes,pic</sql>
+
+    <resultMap id="UserEntity" type="com.xj.iws.http.mvc.entity.UserEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="roleid" property="roleId" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="date" property="date"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="pic" property="pic" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="register" parameterType="UserEntity">
+        INSERT INTO user (<include refid="field"/>) VALUES
+        ('${username}','${password}',0,1,now(),'${name}','${address}',now(),'${describes}','${pic}')
+    </insert>
+
+    <select id="getUserByUsername" resultMap="UserEntity" parameterType="String">
+        SELECT id,
+        <include refid="field"/>
+        FROM user WHERE username = ${_parameter}
+    </select>
+
+    <select id="getUserById" resultMap="UserEntity" parameterType="int">
+        SELECT id,
+        <include refid="field"/>
+        FROM user WHERE id = ${_parameter}
+    </select>
+
+    <update id="updateUser" parameterType="UserEntity">
+        UPDATE user
+        <set>
+            <if test="name != null">name = '${name}',</if>
+            <if test="address != null">address = '${address}',</if>
+            <if test="describes != null">describes = '${describes}',</if>
+            <if test="pic != null">pic = '${pic}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <update id="updatePwd" parameterType="UserEntity">
+        UPDATE user
+        <set>
+            <if test="password != null">password = '${password}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="getUsersByRole" resultMap="UserEntity">
+        SELECT id,
+        <include refid="field"/>
+        FROM user WHERE roleid = ${_parameter}
+    </select>
+
+</mapper>

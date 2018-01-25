@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.DataDao">
+
+    <sql id="field">deviceid,port,number,time,error,count,bit,data</sql>
+
+    <resultMap id="DataEntity" type="com.xj.iws.http.mvc.entity.DataEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="deviceid" property="deviceId" jdbcType="INTEGER"/>
+        <result column="port" property="port" jdbcType="VARCHAR"/>
+        <result column="number" property="number" jdbcType="VARCHAR"/>
+        <result column="time" property="time"/>
+        <result column="error" property="error" jdbcType="VARCHAR"/>
+        <result column="count" property="count" jdbcType="INTEGER"/>
+        <result column="bit" property="bit" jdbcType="INTEGER"/>
+        <result column="data" property="data" jdbcType="VARCHAR"/>
+
+        <result column="groupname" property="groupName" jdbcType="VARCHAR"/>
+        <result column="roomname" property="roomName" jdbcType="VARCHAR"/>
+        <result column="locationname" property="locationName" jdbcType="VARCHAR"/>
+        <result column="addressname" property="addressName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="getStartIdByTime" resultType="String">
+        SELECT id FROM `${tableName}` WHERE time &gt;= #{startTime} LIMIT 1
+    </select>
+
+    <select id="getEndIdByTime" resultType="String">
+        SELECT id FROM `${tableName}` WHERE time &lt;= #{endTime} ORDER BY id DESC LIMIT 1
+    </select>
+
+    <select id="query" parameterType="HashMap" resultMap="DataEntity" >
+        SELECT v.time,v.error,tm.count,tp.bit,v.data,
+        dg.name AS groupname,r.name AS roomname,l.name AS locationname,CONCAT(p.name,c.name,a.name) AS addressname
+        FROM (SELECT d.time,d.error,d.data FROM `${tableName}` d WHERE d.id IN (${dataId})) v
+        INNER JOIN device de ON de.id = ${deviceId}
+        LEFT JOIN deviceterm tm ON de.termid = tm.id
+        LEFT JOIN devicetype tp ON tm.type = tp.id
+        LEFT JOIN devicegroup dg ON de.groupid = dg.id
+        LEFT JOIN room r ON dg.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN city c ON c.cityid = a.cityid
+        LEFT JOIN province p ON p.provinceid = c.provinceid
+    </select>
+
+    <select id="getCount" resultType="int">
+    SELECT count(0)
+    FROM `${tableName}` d
+    WHERE id BETWEEN '${startId}' AND '${endId}'
+    AND id%${timeStep} = 0
+</select>
+
+    <select id="getTCPPresentData"  resultMap="DataEntity" >
+        SELECT v.time,v.error,tm.count,tp.bit,v.data,
+        dg.name AS groupname,r.name AS roomname,l.name AS locationname,CONCAT(p.name,c.name,a.name) AS addressname
+        FROM (SELECT d.time,d.error,d.data FROM `${tableName}` d WHERE `time` BETWEEN SUBDATE(now(),interval 5 SECOND ) AND now()) v
+        INNER JOIN device de ON de.id = ${deviceId}
+        LEFT JOIN deviceterm tm ON de.termid = tm.id
+        LEFT JOIN devicetype tp ON tm.type = tp.id
+        LEFT JOIN devicegroup dg ON de.groupid = dg.id
+        LEFT JOIN room r ON dg.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN city c ON c.cityid = a.cityid
+        LEFT JOIN province p ON p.provinceid = c.provinceid
+    </select>
+
+
+
+</mapper>

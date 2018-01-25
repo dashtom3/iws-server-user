@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.LocationDao">
+
+    <sql id="field">systemid,provinceid,cityid,areaid,positionx,positiony,name,describes,status</sql>
+
+    <resultMap id="LocationEntity" type="com.xj.iws.http.mvc.entity.LocationEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="systemid" property="systemId" jdbcType="INTEGER"/>
+        <result column="provinceid" property="provinceId" jdbcType="INTEGER"/>
+        <result column="cityid" property="cityId" jdbcType="INTEGER"/>
+        <result column="areaid" property="areaId" jdbcType="INTEGER"/>
+        <result column="positionx" property="positionX" jdbcType="DOUBLE"/>
+        <result column="positiony" property="positionY" jdbcType="DOUBLE"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="provincename" property="provinceName" jdbcType="VARCHAR"/>
+        <result column="cityname" property="cityName" jdbcType="VARCHAR"/>
+        <result column="areaname" property="areaName" jdbcType="VARCHAR"/>
+        <result column="pic" property="pic" jdbcType="VARCHAR"/>
+        <result column="systemname" property="systemName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="add" parameterType="LocationEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO location (<include refid="field"/>) VALUES
+        (${systemId},${provinceId},${cityId},${areaId},${positionX},${positionY},'${name}','${describes}',0)
+    </insert>
+
+    <update id="delete">
+        UPDATE location SET status = 2 WHERE id = ${_parameter}
+    </update>
+
+    <update id="update" parameterType="LocationEntity">
+        UPDATE location
+        <set>
+            <if test="systemId != null">systemid = ${systemId},</if>
+            <if test="provinceId != null">provinceid = ${provinceId},</if>
+            <if test="cityId != null">cityid = ${cityId},</if>
+            <if test="areaId != null">areaid = ${areaId},</if>
+            <if test="positionX != null">positionx = ${positionX},</if>
+            <if test="positionY != null">positiony = ${positionY},</if>
+            <if test="name != null">name = '${name}',</if>
+            <if test="describes != null">describes = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="list" resultMap="LocationEntity">
+        SELECT
+        vw.id,vw.systemid,vw.provinceid,vw.cityid,vw.areaid,vw.positionx,vw.positiony,vw.name,vw.describes,
+        vw.provincename,vw.cityname,vw.areaname,vw.systemname,vw.pic
+        FROM (SELECT
+        l.id,l.systemid,l.provinceid,l.cityid,l.areaid,l.positionx,l.positiony,l.name,l.describes,l.status,
+        p.name AS provincename,c.name AS cityname,a.name AS areaname,s.name AS systemname,s.pic AS pic
+
+        FROM location l
+        LEFT JOIN province p ON l.provinceid = p.provinceid
+        LEFT JOIN city c ON l.cityid = c.cityid
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN system s ON l.systemid = s.id
+        <where>
+            <foreach collection="limits" item="limit" separator="OR">
+                <if test="limit.systemId != 0">l.systemid = ${limit.systemId}</if>
+                <if test="limit.provinceId != null">AND l.provinceid = ${limit.provinceId}</if>
+                <if test="limit.cityId != null">AND l.cityid = ${limit.cityId}</if>
+                <if test="limit.areaId != null">AND l.areaid = ${limit.areaId}</if>
+            </foreach>
+        </where>
+        ORDER BY
+        l.systemid,l.provinceid,l.cityid,l.areaid ) vw
+        WHERE vw.status != 2
+        <if test="systemId != 0">AND vw.systemid = ${systemId}</if>
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getListCount" resultType="int">
+        SELECT count(0)
+        FROM ( SELECT
+        l.id,l.systemid
+        FROM location l
+        LEFT JOIN province p ON l.provinceid = p.provinceid
+        LEFT JOIN city c ON l.cityid = c.cityid
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN system s ON l.systemid = s.id
+        <where>
+            <foreach collection="limits" item="limit" separator="OR">
+                <if test="limit.systemId != 0">l.systemid = ${limit.systemId}</if>
+                <if test="limit.provinceId != null">AND l.provinceid = ${limit.provinceId}</if>
+                <if test="limit.cityId != null">AND l.cityid = ${limit.cityId}</if>
+                <if test="limit.areaId != null">AND l.areaid = ${limit.areaId}</if>
+            </foreach>
+        </where>
+        ) vw
+        <where>
+            <if test="systemId != 0">AND vw.systemid = ${systemId}</if>
+        </where>
+
+    </select>
+
+    <select id="detail" parameterType="int" resultMap="LocationEntity">
+        SELECT
+            l.id,l.systemid,l.provinceid,l.cityid,l.areaid,l.positionx,l.positiony,l.name,l.describes,
+            p.name AS provincename,c.name AS cityname,a.name AS areaname,s.name AS systemname,s.pic AS pic
+        FROM location l
+        LEFT JOIN province p ON l.provinceid = p.provinceid
+        LEFT JOIN city c ON l.cityid = c.cityid
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN system s ON l.systemid = s.id
+        WHERE l.id = ${_parameter}
+    </select>
+
+    <select id="query" resultMap="LocationEntity">
+        SELECT
+        vw.id,vw.systemid,vw.provinceid,vw.cityid,vw.areaid,vw.positionx,vw.positiony,vw.name,vw.describes,
+        vw.provincename,vw.cityname,vw.areaname,vw.systemname,vw.pic
+        FROM (SELECT
+        l.id,l.systemid,l.provinceid,l.cityid,l.areaid,l.positionx,l.positiony,l.name,l.describes,l.status,
+        p.name AS provincename,c.name AS cityname,a.name AS areaname,s.name AS systemname,s.pic AS pic
+        FROM location l
+        LEFT JOIN province p ON l.provinceid = p.provinceid
+        LEFT JOIN city c ON l.cityid = c.cityid
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN system s ON l.systemid = s.id
+        <if test="limits!=null">
+        <where>
+            <foreach collection="limits" item="limit" separator="OR">
+                <if test="limit.systemId != 0">l.systemid = ${limit.systemId}</if>
+                <if test="limit.provinceId != null">AND l.provinceid = ${limit.provinceId}</if>
+                <if test="limit.cityId != null">AND l.cityid = ${limit.cityId}</if>
+                <if test="limit.areaId != null">AND l.areaid = ${limit.areaId}</if>
+            </foreach>
+        </where>
+        </if>
+        ORDER BY l.systemid,l.provinceid,l.cityid,l.areaid ) vw
+        <where>
+            vw.status=0
+            <if test="condition.systemId != null">AND vw.systemid = ${condition.systemId}</if>
+            <if test="condition.areaId != null">AND vw.areaid = ${condition.areaId}</if>
+            <if test="condition.cityId != null">AND vw.cityid = ${condition.cityId}</if>
+            <if test="condition.provinceId != null">AND vw.provinceid = ${condition.provinceId}</if>
+        </where>
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0)
+        FROM location l
+        LEFT JOIN province p ON l.provinceid = p.provinceid
+        LEFT JOIN city c ON l.cityid = c.cityid
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN system s ON l.systemid = s.id
+        <where>
+            <if test="systemId != null">AND l.systemid = ${systemId}</if>
+            <if test="areaId != null">AND l.areaid = ${areaId}</if>
+            <if test="cityId != null">AND l.cityid = ${cityId}</if>
+            <if test="provinceId != null">AND l.provinceid = ${provinceId}</if>
+        </where>
+    </select>
+</mapper>

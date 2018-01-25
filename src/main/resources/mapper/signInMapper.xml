@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.SignInDao">
+    <!--签到，添加-->
+    <insert id="signIn" parameterType="com.xj.iws.http.mvc.entity.util.DataSave">
+        INSERT INTO
+        sign_in
+        (status_id,user_id,problems,teamwork,detail_msg,img,lng,lat,name,user_name,address)
+        VALUES
+        (#{status},#{userId},#{problems},#{teamwork},#{detailMsg},#{img},#{lng},#{lat},#{name},#{userName},#{address})
+    </insert>
+    <!--查看数据-->
+    <resultMap id="sign" type="com.xj.iws.http.mvc.entity.util.DataSave">
+        <result column="status_id" property="status" />
+        <result column="user_id" property="userId" />
+        <result column="problems" property="problems" />
+        <result column="teamwork" property="teamwork" />
+        <result column="detail_msg" property="detailMsg" />
+        <result column="img" property="img" />
+        <result column="lng" property="lng" />
+        <result column="lat" property="lat" />
+        <result column="time" property="time" />
+        <result column="name" property="name" />
+        <result column="address" property="address"/>
+        <result column="user_name" property="userName"/>
+        <association property="system" javaType="SystemE" autoMapping="true">
+            <id property="id" column="id"/>
+            <result property="date" column="date"/>
+            <result property="pic" column="pic"/>
+            <result property="systemName" column="system_name"/>
+        </association>
+        <association property="location" javaType="Location" autoMapping="true">
+            <id property="locationId" column="location_id"/>
+            <result property="locationName" column="location_name"/>
+        </association>
+    </resultMap>
+    <select id="querySignIn" resultMap="sign">
+        SELECT
+        a.status_id,
+        a.user_id,
+        a.problems,
+        a.teamwork,
+        a.detail_msg,
+        a.img,
+        a.lng,
+        a.lat,
+        DATE_FORMAT(a.time,'%Y-%m-%d %H:%i:%s') as time,
+        a.`name`,
+        a.address,
+        a.user_name,
+        l.describes,
+        l.positionx,
+        l.positiony,
+        l.areaid,
+        l.cityid,
+        l.provinceid,
+        l.systemid,
+        l.name as location_name,
+        l.id as location_id,
+        sy.id,
+        sy.date,
+        sy.pic,
+        sy.name as system_name
+        FROM
+        sign_in a LEFT JOIN location l ON a.`status_id` = l.`id`
+        LEFT JOIN system sy on l.systemid=sy.id
+            <where>
+            <if test="dataSave.status!=null">
+               a.status_id=#{dataSave.status}
+            </if>
+            <if test="dataSave.userId!=null">
+                AND  a.user_id=#{dataSave.userId}
+            </if>
+            <if test="dataSave.name!=null">
+                AND a.name=#{dataSave.name}
+            </if>
+            <if test="dataSave.startTime!=null and dataSave.endTime!=null">
+                and a.time BETWEEN #{dataSave.startTime} AND #{dataSave.endTime}
+            </if>
+          </where>
+        order by a.time DESC
+              limit #{currentNumber},#{numberPerPage}
+    </select>
+    <select id="export" resultMap="sign">
+        SELECT
+        a.status_id,
+        a.user_id,
+        a.problems,
+        a.teamwork,
+        a.detail_msg,
+        a.img,
+        a.lng,
+        a.lat,
+        DATE_FORMAT(a.time,'%Y-%m-%d %H:%i:%s') as time,
+        a.`name`,
+        a.address,
+        a.user_name,
+        l.describes,
+        l.positionx,
+        l.positiony,
+        l.areaid,
+        l.cityid,
+        l.provinceid,
+        l.systemid,
+        sy.id,
+        sy.date,
+        sy.pic
+        FROM
+        (sign_in a LEFT JOIN location l ON a.`status_id` = l.`status`)
+        LEFT JOIN system sy on l.id=sy.id
+        <where>
+            <if test="dataSave.status!=null">
+                a.status_id=#{dataSave.status}
+            </if>
+            <if test="dataSave.userId!=null">
+                AND  a.user_id=#{dataSave.userId}
+            </if>
+            <if test="dataSave.name!=null">
+                AND a.name=#{dataSave.name}
+            </if>
+            <if test="dataSave.startTime!=null and dataSave.endTime!=null">
+                and a.time BETWEEN #{dataSave.startTime} AND #{dataSave.endTime}
+            </if>
+        </where>
+    </select>
+    <select id="tataCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM sign_in a
+        <where>
+            <if test="status!=null">
+                a.status_id=#{status}
+            </if>
+            <if test="userId!=null">
+                AND  a.user_id=#{userId}
+            </if>
+            <if test="name!=null">
+                AND a.name=#{name}
+            </if>
+            <if test="startTime!=null and endTime!=null">
+                and a.time BETWEEN #{startTime} AND #{endTime}
+            </if>
+        </where>
+    </select>
+</mapper>

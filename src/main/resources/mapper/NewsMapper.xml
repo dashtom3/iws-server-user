@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.NewsDao">
+
+    <sql id="field">alarmid,userid,status,alarmtime,confirmtime,name,describes</sql>
+
+    <resultMap id="NewsEntity" type="com.xj.iws.http.mvc.entity.NewsEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="alarmid" property="alarmId" jdbcType="INTEGER"/>
+        <result column="userid" property="userId" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="alarmtime" property="alarmTime"/>
+        <result column="confirmtime" property="confirmTime"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="systemname" property="systemName" jdbcType="VARCHAR"/>
+        <result column="locationname" property="locationName" jdbcType="VARCHAR"/>
+        <result column="roomname" property="roomName" jdbcType="VARCHAR"/>
+        <result column="groupname" property="groupName" jdbcType="VARCHAR"/>
+        <result column="systemname" property="systemName" jdbcType="VARCHAR"/>
+        <result column="username" property="userName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="list" resultType="NewsEntity">
+        SELECT
+            n.id,n.alarmid,n.userid,n.status,n.alarmtime,n.confirmtime,n.name,n.describes,s.name AS systemname,u.name AS username
+            ,CONCAT(p.name,c.name,a.name,l.name) AS locationname,r.name AS roomname,dg.name AS groupname
+        FROM news n
+        LEFT JOIN user u ON n.userid = u.id
+        LEFT JOIN alarm al ON n.alarmid = al.id
+        LEFT JOIN device d ON al.deviceid = d.id
+        LEFT JOIN devicegroup dg ON d.groupid = dg.id
+        LEFT JOIN room r ON dg.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN area a ON a.areaid = l.areaid
+        LEFT JOIN city c ON c.cityid = a.cityid
+        LEFT JOIN province p ON p.provinceid = c.provinceid
+        LEFT JOIN system s ON l.systemid = s.id
+        <where>
+            <if test="condition.userId != null">AND userid = '${condition.userId}'</if>
+            <if test="condition.startTime != null">AND alarmtime &gt; '${condition.startTime}'</if>
+            <if test="condition.endTime != null">AND alarmtime &lt; '${condition.endTime}'</if>
+            <if test="condition.status != null">AND n.status = '${condition.status}'</if>
+            <if test="condition.systemId != null">AND s.id = '${condition.systemId}'</if>
+            <if test="condition.describes != null">AND n.describes LIKE '%${condition.describes}%'</if>
+        </where>
+        ORDER BY alarmtime DESC
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0)
+        FROM news n
+        LEFT JOIN user u ON n.userid = u.id
+        LEFT JOIN alarm a ON n.alarmid = a.id
+        LEFT JOIN device d ON a.deviceid = d.id
+        LEFT JOIN devicegroup dg ON d.groupid = dg.id
+        LEFT JOIN room r ON dg.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN system s ON l.systemid = s.id
+        <where>
+            <if test="condition.userId != null">AND n.userid = '${condition.userId}'</if>
+            <if test="condition.startTime != null">AND n.alarmtime &gt; '${condition.startTime}'</if>
+            <if test="condition.endTime != null">AND n.alarmtime &lt; '${condition.endTime}'</if>
+            <if test="condition.status != null">AND n.status = '${condition.status}'</if>
+            <if test="condition.systemId != null">AND s.id = '${condition.systemId}'</if>
+            <if test="condition.describes != null">AND n.descrbes LIKE '%${condition.describes}%'</if>
+        </where>
+    </select>
+
+    <select id="detail" resultType="NewsEntity">
+        SELECT
+        n.id,n.alarmid,n.userid,n.status,n.alarmtime,n.confirmtime,n.name,n.describes,s.name AS systemname,u.name AS username
+        FROM news n
+        LEFT JOIN user u ON n.userid = u.id
+        LEFT JOIN alarm a ON n.alarmid = a.id
+        LEFT JOIN device d ON a.deviceid = d.id
+        LEFT JOIN devicegroup dg ON d.groupid = dg.id
+        LEFT JOIN room r ON dg.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN system s ON l.systemid = s.id
+        WHERE n.id = ${_parameter}
+    </select>
+
+    <update id="confirm" >
+        UPDATE news SET userid = ${userId}, status = 1, confirmtime = now()
+        WHERE id = ${newsId}
+    </update>
+
+
+</mapper>

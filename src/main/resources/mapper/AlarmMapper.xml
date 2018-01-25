@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.AlarmDao">
+
+    <sql id="field">systemid,locationid,roomid,groupid,starttime,endtime,status,confirm,name,describes</sql>
+
+    <resultMap id="AlarmEntity" type="com.xj.iws.http.mvc.entity.AlarmEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="systemid" property="locationId" jdbcType="INTEGER"/>
+        <result column="locationid" property="locationId" jdbcType="INTEGER"/>
+        <result column="roomid" property="roomId" jdbcType="INTEGER"/>
+        <result column="groupid" property="groupId" jdbcType="INTEGER"/>
+        <result column="starttime" property="startTime"/>
+        <result column="endtime" property="endTime"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="confirm" property="confirm" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="systemname" property="systemName" jdbcType="VARCHAR"/>
+        <result column="locationname" property="locationName" jdbcType="VARCHAR"/>
+        <result column="roomname" property="roomName" jdbcType="VARCHAR"/>
+        <result column="groupname" property="groupName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="list" resultType="AlarmEntity">
+        SELECT vw.id,vw.starttime,vw.endtime,vw.status,vw.confirm,vw.name,vw.describes,
+        vw.systemname,vw.locationname,vw.roomname,vw.groupname
+        FROM (
+        SELECT al.id,l.systemid,l.provinceid,l.cityid,l.areaid,l.id AS locationid,r.id AS roomid,g.id AS groupid,d.id AS deviceid,
+        al.starttime,al.endtime,al.status,al.confirm,al.name,al.describes,
+        s.name AS systemname,CONCAT(IFNULL(p.name,''),IFNULL(c.name,''),IFNULL(a.name,''),IFNULL(l.name,'')) AS
+        locationname,r.name AS roomname,g.name AS groupname
+        FROM alarm al
+        LEFT JOIN device d ON al.deviceid = d.id
+        LEFT JOIN devicegroup g ON d.groupid = g.id
+        LEFT JOIN room r ON g.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN system s ON l.systemid = s.id
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN city c ON a.cityid = c.cityid
+        LEFT JOIN province p ON c.provinceid = p.provinceid
+        <where>
+            <foreach collection="limit" item="limit" separator="OR">
+                <if test="limit.systemId != 0">l.systemid = ${limit.systemId}</if>
+                <if test="limit.provinceId != null">AND l.provinceid = ${limit.provinceId}</if>
+                <if test="limit.cityId != null">AND l.cityid = ${limit.cityId}</if>
+                <if test="limit.areaId != null">AND l.areaid = ${limit.areaId}</if>
+            </foreach>
+        </where>
+        ORDER BY al.id DESC
+        ) vw
+        <where>
+            <if test="condition.systemId != null">AND vw.systemid = '${condition.systemId}'</if>
+            <if test="condition.provinceId != null">AND vw.provinceid = '${condition.provinceId}'</if>
+            <if test="condition.cityId != null">AND vw.cityid = '${condition.cityId}'</if>
+            <if test="condition.areaId != null">AND vw.areaid = '${condition.areaId}'</if>
+            <if test="condition.locationId != null">AND vw.locationid = '${condition.locationId}'</if>
+            <if test="condition.roomId != null">AND vw.roomid = '${condition.roomId}'</if>
+            <if test="condition.groupId != null">AND vw.groupid = '${condition.groupId}'</if>
+            <if test="condition.deviceId != null">AND vw.deviceid = '${condition.deviceId}'</if>
+            <if test="condition.status != null">AND vw.status = '${condition.status}'</if>
+            <if test="condition.startTime != null">AND vw.starttime &gt; '${condition.startTime}' </if>
+            <if test="condition.endTime != null">AND vw.starttime &lt; '${condition.endTime}' </if>
+        </where>
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0) FROM (
+        SELECT al.id,l.systemid,l.provinceid,l.cityid,l.areaid,l.id AS locationid,r.id AS roomid,g.id AS groupid,d.id AS deviceid,
+        al.starttime,al.endtime,al.status
+        FROM alarm al
+        LEFT JOIN device d ON al.deviceid = d.id
+        LEFT JOIN devicegroup g ON d.groupid = g.id
+        LEFT JOIN room r ON g.roomid = r.id
+        LEFT JOIN location l ON r.locationid = l.id
+        LEFT JOIN system s ON l.systemid = s.id
+        LEFT JOIN area a ON l.areaid = a.areaid
+        LEFT JOIN city c ON a.cityid = c.cityid
+        LEFT JOIN province p ON c.provinceid = p.provinceid
+        <where>
+            <foreach collection="limit" item="limit" separator="OR">
+                <if test="limit.systemId != 0">l.systemid = ${limit.systemId}</if>
+                <if test="limit.provinceId != null">AND l.provinceid = ${limit.provinceId}</if>
+                <if test="limit.cityId != null">AND l.cityid = ${limit.cityId}</if>
+                <if test="limit.areaId != null">AND l.areaid = ${limit.areaId}</if>
+            </foreach>
+        </where>
+        ORDER BY al.id DESC
+        ) vw
+        <where>
+            <if test="condition.systemId != null">AND vw.systemid = '${condition.systemId}'</if>
+            <if test="condition.provinceId != null">AND vw.provinceid = '${condition.provinceId}'</if>
+            <if test="condition.cityId != null">AND vw.cityid = '${condition.cityId}'</if>
+            <if test="condition.areaId != null">AND vw.areaid = '${condition.areaId}'</if>
+            <if test="condition.locationId != null">AND vw.locationid = '${condition.locationId}'</if>
+            <if test="condition.roomId != null">AND vw.roomid = '${condition.roomId}'</if>
+            <if test="condition.groupId != null">AND vw.groupid = '${condition.groupId}'</if>
+            <if test="condition.deviceId != null">AND vw.deviceid = '${condition.deviceId}'</if>
+            <if test="condition.status != null">AND vw.status = '${condition.status}'</if>
+            <if test="condition.startTime != null">AND vw.starttime &gt; '${condition.startTime}' </if>
+            <if test="condition.endTime != null">AND vw.starttime &lt; '${condition.endTime}' </if>
+        </where>
+    </select>
+
+    <update id="confirm" >
+        UPDATE alarm SET confirm = 1 WHERE id = ${_parameter}
+    </update>
+
+</mapper>

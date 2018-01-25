@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.LogDao">
+
+    <sql id="field">userid,type,time,describes,errorcode,ip</sql>
+
+    <resultMap id="LogEntity" type="com.xj.iws.http.mvc.entity.LogEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="userid" property="userId" jdbcType="INTEGER"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="time" property="time"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="errorcode" property="errorCode" jdbcType="VARCHAR"/>
+        <result column="ip" property="ip" jdbcType="VARCHAR"/>
+        <result column="username" property="userName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="list" parameterType="HashMap" resultMap="LogEntity">
+        SELECT l.id,<include refid="field"/>,u.name AS username
+        FROM log l
+        LEFT JOIN user u ON l.userid = u.id
+        <where>
+            <if test="type != null">AND type = '${type}'</if>
+            <if test="startTime != null">AND time &gt; '${startTime}'</if>
+            <if test="endTime != null">AND time &lt; '${endTime}'</if>
+        </where>
+        ORDER BY time DESC
+    </select>
+
+    <insert id="addHandle" parameterType="LogEntity" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO log (<include refid="field"/>) VALUES (${userId},1,now(),'${describes}',null,'${ip}')
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM log WHERE id IN (<foreach collection="Array" item="id" separator=",">${id}</foreach>)
+    </delete>
+
+</mapper>

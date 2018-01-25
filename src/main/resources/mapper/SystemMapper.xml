@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.SystemDao">
+
+    <sql id="field">date,name,pic,describes,status</sql>
+
+    <resultMap id="SystemEntity" type="com.xj.iws.http.mvc.entity.SystemEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="date" property="date" jdbcType="DATE"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="pic" property="pic" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="add" parameterType="SystemEntity">
+        INSERT INTO system (<include refid="field"/>) VALUES ('${strdate}','${name}','${pic}','${describes}',0)
+    </insert>
+
+    <update id="delete">
+        UPDATE system SET status = 2 WHERE id = ${_parameter}
+    </update>
+
+    <update id="update" parameterType="SystemEntity">
+        UPDATE system
+        <set>
+            <if test="name != null">name = '${name}',</if>
+            <if test="pic != null">pic = '${pic}',</if>
+            <if test="describes != null">describe = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="list" resultMap="SystemEntity">
+        SELECT id,<include refid="field"/>
+        FROM (
+        SELECT id,<include refid="field"/>
+        FROM system
+        <where>
+            <foreach collection="list" item="limit" separator="OR ">
+                <if test="limit.systemId != 0">id = ${limit.systemId}</if>
+            </foreach>
+        </where>
+        ORDER BY id) vw
+        WHERE vw.status != 2
+    </select>
+
+    <select id="detail" parameterType="int" resultMap="SystemEntity">
+        SELECT id,
+        <include refid="field"/>
+        FROM system WHERE id = ${_parameter}
+    </select>
+
+    <select id="pic" resultType="String">
+        SELECT url FROM img WHERE name = 'system'
+    </select>
+
+</mapper>

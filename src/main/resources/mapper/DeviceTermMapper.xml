@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.DeviceTermDao">
+
+    <sql id="deviceType">bit,name,pic,describes</sql>
+    <sql id="deviceTerm">count,protocol,type,name,describes,status,start</sql>
+    <sql id="pointField">termid,number,roleid,name,describes,unit,min,max,multiple,address,length</sql>
+
+    <resultMap id="PointFieldEntity" type="com.xj.iws.http.mvc.entity.PointFieldEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="termid" property="termId" jdbcType="INTEGER"/>
+        <result column="number" property="number" jdbcType="INTEGER"/>
+        <result column="roleid" property="roleId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="unit" property="unit" jdbcType="VARCHAR"/>
+        <result column="min" property="min" jdbcType="DOUBLE"/>
+        <result column="max" property="max" jdbcType="DOUBLE"/>
+        <result column="multiple" property="multiple" jdbcType="INTEGER"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="DeviceTermEntity" type="com.xj.iws.http.mvc.entity.DeviceTermEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="count" property="count" jdbcType="INTEGER"/>
+        <result column="length" property="length" jdbcType="INTEGER"/>
+        <result column="protocol" property="protocol" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="typename" property="typeName" jdbcType="VARCHAR"/>
+        <result column="length" property="length" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap id="DeviceTypeEntity" type="com.xj.iws.http.mvc.entity.DeviceTypeEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="bit" property="bit" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="pic" property="pic" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="addDevice" parameterType="DeviceTermEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO deviceterm (<include refid="deviceTerm"/>) VALUES
+        ('${count}','${protocol}',${type},'${name}','${describes}',0,${start})
+    </insert>
+
+    <insert id="addField">
+        INSERT INTO pointfield (<include refid="pointField"/>) VALUES
+        <foreach collection="fields" item="item" separator=",">
+            (${deviceId},'${item.number}','${item.roleId}','${item.name}','${item.describes}','${item.unit}','${item.min}','${item.max}','${item.multiple}','${item.address}',${item.length})
+        </foreach>
+    </insert>
+
+    <update id="deleteDevice">
+        UPDATE deviceterm SET status = 2 WHERE id = ${_parameter}
+    </update>
+
+    <update id="update" parameterType="DeviceTermEntity">
+        UPDATE deviceterm
+        <set>
+            <if test="protocol != null">protocol = '${name}',</if>
+            <if test="name != null">name = '${name}',</if>
+            <if test="describes != null">describes = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+    <select id="fieldList" parameterType="int" resultMap="PointFieldEntity">
+        SELECT id,
+        <include refid="pointField"/>
+        FROM pointfield
+        <where>
+            <if test="_parameter != 0">termid = ${_parameter}</if>
+        </where>
+        ORDER BY id
+    </select>
+
+    <select id="detail" parameterType="int" resultMap="DeviceTermEntity">
+        SELECT dt.id,dt.count,dt.protocol,dt.type,dt.name,dt.describes,t.name AS typename
+        FROM deviceterm dt
+        LEFT JOIN devicetype t ON dt.type = t.id
+        WHERE dt.id = ${_parameter}
+    </select>
+
+    <select id="deviceTermByIds" resultMap="DeviceTermEntity">
+        SELECT dt.id,dt.count,dt.protocol,dt.type,dt.name,dt.describes,t.name AS typename
+        FROM deviceterm dt
+        LEFT JOIN devicetype t ON dt.type = t.id
+        WHERE dt.id IN (<foreach collection="array" item="item" separator=",">${item}</foreach>)
+    </select>
+
+    <select id="deviceTermList" resultMap="DeviceTermEntity">
+        SELECT dt.id,dt.count,dt.protocol,dt.type,dt.name,dt.describes,t.name AS typename
+        FROM deviceterm dt
+        LEFT JOIN devicetype t ON dt.type = t.id
+        WHERE dt.status != 2
+        <if test="type != null">AND dt.type = '${type}'</if>
+        ORDER BY dt.id
+        <if test="page.numberPerPage != 0">
+            LIMIT ${page.currentNumber},${page.numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT count(0)
+        FROM deviceterm dt
+        LEFT JOIN devicetype t ON dt.type = t.id
+        <where>
+            <if test="_parameter != null">dt.type = '${_parameter}'</if>
+        </where>
+        ORDER BY dt.id
+    </select>
+
+    <select id="getBit" resultType="int">
+        SELECT bit FROM deviceterm tm
+        LEFT JOIN devicetype tp ON tm.type = tp.id
+        WHERE tm.id = ${_parameter}
+    </select>
+
+    <select id="fieldDetail" parameterType="int" resultMap="PointFieldEntity">
+        SELECT id,
+        <include refid="pointField"/>
+        FROM pointfield WHERE id = ${_parameter}
+    </select>
+
+    <select id="typeList" resultMap="DeviceTypeEntity">
+        SELECT id,
+        <include refid="deviceType"/>
+        FROM devicetype ORDER BY id
+    </select>
+
+    <select id="query" resultMap="DeviceTermEntity">
+        SELECT id,
+        <include refid="deviceTerm"/>
+        FROM deviceterm
+        WHERE status != 2
+        <if test="protocol != null">AND protocol LIKE '%${protocol}%'</if>
+        <if test="type != 0">AND type = '${type}'</if>
+        <if test="name != null">AND name LIKE '%${name}%'</if>
+        ORDER BY id
+    </select>
+
+    <select id="modelNumber" resultType="int">
+        SELECT modelnum FROM devicegrouptype gt
+        LEFT JOIN devicegroupinfo gi ON gi.type = gt.id
+        LEFT JOIN devicegroup g ON g.infoid = gi.id
+        LEFT JOIN device d ON d.groupid = g.id
+        WHERE d.id = ${_parameter}
+    </select>
+
+    <select id="modelFieldList" resultMap="PointFieldEntity">
+        SELECT id,
+        <include refid="pointField"/>
+        FROM pointfield
+        WHERE termid = ${_parameter} AND modelid IS NOT NULL
+        ORDER BY modelid
+    </select>
+
+</mapper>

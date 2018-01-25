@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.MaintenanceDao">
+
+    <insert id="addMaintenance">
+        insert into maintenance(maintenance_user_id,period,maintenance_time,location_id,next_time)
+        VALUES (#{id},#{maintenance.period},str_to_date(#{time},'%Y-%m-%d %H:%i:%s'),#{locationId},#{nextTime})
+    </insert>
+    
+    <select id="list" resultMap="maintenance">
+        select
+        a.maintenance_id,
+        a.next_time,
+        if(DATE_ADD(a.next_time,INTERVAL -(a.period/1000) SECOND)&lt;NOW(),DATE_ADD(a.next_time,INTERVAL -(a.period/1000) SECOND),NULL ) as previous_time,
+        b.id,
+        b.username,
+        c.id as locat_id,
+        c.name as locat_name,
+        d.id as system_id,
+        d.name as sytem_name
+        FROM maintenance a,`user` b,location c,`system` d
+        <where>
+            a.maintenance_user_id=b.id and a.location_id=c.id and c.systemid=d.id
+            <if test="userId!=null and userId!=0">
+                and a.maintenance_user_id=#{userId}
+            </if>
+            <if test="locationId!=null and locationId!=0">
+                and a.location_id=#{locationId}
+            </if>
+            <if test="systemId!=null and systemId!=0">
+                and d.id=#{systemId}
+            </if>
+            <if test="startTime!=null and startTime!=''">
+                and a.next_time &gt;#{startTime}
+            </if>
+            <if test="endTime!=null and endTime!=''">
+                and a.next_time &lt; #{endTime}
+            </if>
+        </where>
+        order by a.next_time ASC
+        limit #{page.currentNumber},#{page.numberPerPage}
+    </select>
+
+    <resultMap id="maintenance" type="com.xj.iws.http.mvc.entity.Maintenance" autoMapping="true">
+        <id property="maintenanceId" column="maintenance_id"/>
+        <result property="previousTime" column="previous_time"/>
+        <result property="nextTime" column="next_time"/>
+        <association property="system" javaType="SystemE" autoMapping="true">
+            <id property="id" column="system_id"/>
+            <result property="systemName" column="sytem_name"/>
+        </association>
+        <association property="location" javaType="Location">
+            <id property="locationId" column="locat_id"/>
+            <result property="locationName" column="locat_name"/>
+        </association>
+        <association property="userEntity" javaType="UserEntity">
+            <id property="id" column="id"/>
+            <result property="username" column="username"/>
+        </association>
+    </resultMap>
+
+    <select id="getTotalNumber" resultType="java.lang.Integer">
+        select
+        count(*)
+        FROM maintenance a,`user` b,location c,`system` d
+        <where>
+            a.maintenance_user_id=b.id and a.location_id=c.id and c.systemid=d.id
+            <if test="userId!=null and userId!=0">
+                and a.maintenance_user_id=#{userId}
+            </if>
+            <if test="locationId!=null and locationId!=0">
+                and a.location_id=#{locationId}
+            </if>
+            <if test="systemId!=null and systemId!=0">
+                and d.id=#{systemId}
+            </if>
+            <if test="startTime!=null and startTime!=''">
+                and next_time &gt;#{startTime}
+            </if>
+            <if test="endTime!=null and endTime!=''">
+                and next_time &lt; #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <delete id="delete">
+        delete from maintenance where maintenance_id=#{maintenanceId}
+    </delete>
+
+    <update id="update">
+        update maintenance
+        <set>
+            <if test="userId!=null">
+                maintenance_user_id=#{userId},
+            </if>
+            <if test="locationId!=null">
+                location_id=#{locationId},
+            </if>
+            <if test="date!=null">
+                maintenance_time=#{date},next_time=#{date},
+            </if>
+            <if test="maintenance.period!=null">
+                period=#{maintenance.period}
+            </if>
+        </set>
+        where maintenance_id=#{maintenance.maintenanceId}
+    </update>
+
+
+
+</mapper>

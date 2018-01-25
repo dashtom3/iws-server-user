@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xj.iws.http.mvc.dao.DeviceInfoDao">
+
+    <sql id="deviceGroupInfo">terms,status,type,name,describes</sql>
+
+    <sql id="deviceGroupType">systemid,name,describes,pic</sql>
+
+    <resultMap id="deviceGroupInfoEntity" type="com.xj.iws.http.mvc.entity.DeviceGroupInfoEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="terms" property="terms" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="DeviceGroupTypeEntity" type="com.xj.iws.http.mvc.entity.DeviceGroupTypeEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="systemid" property="systemId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="describes" property="describes" jdbcType="VARCHAR"/>
+        <result column="pic" property="pic" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="deviceGroupList" resultMap="deviceGroupInfoEntity">
+        SELECT id,
+        <include refid="deviceGroupInfo"/>
+        FROM devicegroupinfo
+        WHERE status != 2
+        ORDER BY id
+        <if test="numberPerPage != 0">
+            LIMIT ${currentNumber},${numberPerPage}
+        </if>
+    </select>
+
+    <select id="getCount" resultType="int">
+        SELECT COUNT(0) FROM devicegroupinfo
+    </select>
+
+    <select id="groupDetail" parameterType="int" resultMap="deviceGroupInfoEntity">
+        SELECT id,
+        <include refid="deviceGroupInfo"/>
+        FROM devicegroupinfo
+        WHERE id = ${_parameter}
+    </select>
+
+    <select id="groupTypes" resultMap="DeviceGroupTypeEntity">
+        SELECT id,
+        <include refid="deviceGroupType"/>
+        FROM devicegrouptype
+    </select>
+
+    <insert id="addGroup" parameterType="deviceGroupInfoEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO devicegroupinfo (<include refid="deviceGroupInfo"/>) VALUES
+        ('${terms}',0,'${type}','${name}','${describes}')
+    </insert>
+
+    <update id="deleteGroup">
+        UPDATE devicegroupinfo SET status = 2 WHERE id = ${_parameter}
+    </update>
+
+    <update id="updateGroup" parameterType="deviceGroupInfoEntity">
+        UPDATE devicegroupinfo
+        <set>
+            <if test="terms != null">roomId = '${terms}',</if>
+            <if test="type != 0">type = '${type}',</if>
+            <if test="name != null">name = '${name}',</if>
+            <if test="describes != null">describes = '${describes}',</if>
+        </set>
+        WHERE id = ${id}
+    </update>
+
+</mapper>
