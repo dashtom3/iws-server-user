@@ -16,7 +16,7 @@ public class CuHikVisionController {
     public void downloadComponent(
             HttpServletRequest request, HttpServletResponse response
     ){
-        String fileName = "WebComponentsKit.exe";
+        String fileName = "WebComponents.exe";
         FileUtil.download(fileName,request,response);
     }
 }
